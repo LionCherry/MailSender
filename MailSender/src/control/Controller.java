@@ -1,6 +1,7 @@
 package control;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.mail.MessagingException;
 
@@ -14,6 +15,10 @@ public interface Controller {
 	 * 获取参数配置
 	 */
 	String getProperty(String x);
+	/**
+	 * 获取参数配置
+	 */
+	List<String> getPropertyKeys();
 	/**
 	 * 配置文件名称
 	 */
@@ -31,14 +36,15 @@ public interface Controller {
 	void loadProperty(String fileName) throws IOException, ClassNotFoundException;
 
 	/**
-	 * 初始化Session以备连接
-	 */
-	void init();
-	/**
 	 * 从配置中读取用户帐号和密码，连接服务器
 	 * @throws MessagingException 
 	 */
 	void connect() throws MessagingException;
+	/**
+	 * 关闭连接
+	 * @throws MessagingException 
+	 */
+	void close() throws MessagingException;
 	
 	/**
 	 * 创建新邮件

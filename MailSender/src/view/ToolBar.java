@@ -2,10 +2,15 @@ package view;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 
+import javax.mail.internet.MimeMessage.RecipientType;
+import javax.mail.MessagingException;
 import javax.swing.*;
 
+import control.Controller;
 import main.Helper;
+import model.Mail;
 
 public final class ToolBar extends Content {
 	private static final long serialVersionUID = -800095694161787037L;
@@ -53,9 +58,13 @@ public final class ToolBar extends Content {
 		}
 	}
 	
+	enum Statu{
+		wait,connected
+	}
+	private Statu statu=Statu.wait;
 
 	public void setup(){
-		int i=0,y=0,w,W=6,lef=1;
+		int i=0,y=0,w,W=6,lef=1,j=0;
 		if(this.getShow()){
 			//============================================================================
 			cs[i]=new JLabel("============="+Helper.Name+" "+Helper.Version+"=============");
@@ -63,91 +72,152 @@ public final class ToolBar extends Content {
 			panels[i]=Helper.createComponent(this,cs[i],lef,y,W,1,false);
 			i++;y++;
 			//============================================================================
-			cs[i]=new JLabel("IP & port");
-			panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 3,1,false);
-			i++;
-			cs[i]=this.frame.oper.isConnected()?
-					new JTextField(20)
-					:new JLabel(""+this.frame.oper.getIP()+":"+this.frame.oper.getPort());
-			panels[i]=Helper.createComponent(this,cs[i],w,y,W-w,1,false);
-			cis[0]=i;
+			cs[i]=new JLabel("参数配置");
+			panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
 			i++;y++;
-			if(!this.frame.oper.isConnected()){
-				cs[i]=new JLabel(">> Connect to the Server <<");
-				panels[i]=Helper.createComponent(this,cs[i],w,y,W,1,false);
-				cis[1]=i;
-				panels[i].addMouseListener(new Listener(){
-					public void mouseReleased(MouseEvent e){
-						//~~~~~~~~~~~~~~
-						//连接到服务器
-						String ip;
-						int port;
-						try{
-							String[] ipport=((JTextField)cs[cis[0]]).getText().split(":");
-							ip=ipport[0];
-							port=Integer.parseInt(ipport[1]);
-							ToolBar.this.frame.oper.connectServer(ip, port);
-						}catch(Throwable t){
-							t.printStackTrace();
-							ToolBar.this.frame.debug("ip&port is error!");
-						}
-						ToolBar.this.frame.debug(ToolBar.this.frame.oper.isConnected()?
-								"Server connected!"
-								:"Fail to connect the Server!");
-						ToolBar.this.frame.refreshDeep();
+			//============================================================================
+			{
+				java.util.List<String> keys=this.frame.controller.getPropertyKeys();
+				for(String key:keys){
+					cs[i]=new JLabel(key);
+					panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 3,1,false);
+					cis[++j]=i;
+					i++;
+					if(statu==Statu.connected){
+						cs[i]=new JLabel(this.frame.controller.getProperty(key));
+					}else{
+						cs[i]=new JTextField(20);
+						((JTextField)cs[i]).setText(this.frame.controller.getProperty(key));
 					}
-				});//*/
-				i++;y++;
-			}
-			if(this.frame.oper.isConnected() && this.frame.oper.getPlayer()!=null){
-				//============================================================================
-				cs[i]=new JLabel("Room Code");
-				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 3,1,false);
-				i++;
-				cs[i]=this.frame.oper.getRoom()==null?
-						new JTextField(20)
-						:new JLabel(""+this.frame.oper.getRoom().getCode());
-				panels[i]=Helper.createComponent(this,cs[i],w,y,W-w,1,false);
-				cis[2]=i;
-				i++;y++;
-				//============================================================================
-				cs[i]=this.frame.oper.getRoom()==null?
-						 new JLabel(">>  join the game  <<")
-						:new JLabel("<< get out of here >>");
+					panels[i]=Helper.createComponent(this,cs[i],w,y,W-w,1,false);
+					cis[++j]=i;
+					i++;y++;
+				}
+				cs[i]=new JLabel(statu==Statu.connected?
+						"<< disconnect >>"
+						:">>> connect <<<");
 				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
 				panels[i].addMouseListener(new Listener(){
 					public void mouseReleased(MouseEvent e){
-						if(this.frame.oper.getRoom()!=null){
-							//~~~~~~~~~~~~~~
-							//退出房间
-							ToolBar.this.frame.oper.getPlayer().logoutRoom();
-							ToolBar.this.frame.debug(ToolBar.this.frame.oper.getRoom()==null?
-									"Get out of the Room successfully!"
-									:"Fail to get out of the Room!");
-						}else{
-							String code=((JTextField)cs[cis[2]]).getText();
-							if(code==null||code.length()<=0){
-								//~~~~~~~~~~~~~~
-								//创建room
-								code=ToolBar.this.frame.oper.getPlayer().createRoom();
-								((JTextField)cs[cis[2]]).setText(code);
-								ToolBar.this.frame.debug(ToolBar.this.frame.oper.getRoom()!=null?
-										("Get a new Room code: "+code+"!")
-										:"Fail to get a new Room code!");
-							}else{
-								//~~~~~~~~~~~~~~
-								//连接到room
-								ToolBar.this.frame.oper.getPlayer().loginRoom(code);
+						//~~~~~~~~~~~~~~
+						if(statu==Statu.connected){
+							//断开连接
+							try{
+								ToolBar.this.frame.controller.close();
+								ToolBar.this.frame.debug("成功断开连接");
+								statu=Statu.wait;
+							}catch(MessagingException ee){
+								ee.printStackTrace();
+								ToolBar.this.frame.debug("断开连接失败");
+								return;
 							}
-							ToolBar.this.frame.debug(ToolBar.this.frame.oper.getRoom()!=null?
-									"Get in Room successfully!"
-									:"Fail to get in the Room!");
+						}else{
+							//连接到服务器
+							for(int j=1;j<=ToolBar.this.frame.controller.getPropertyKeys().size();j++){
+								String key=((JLabel)cs[cis[j*2-1]]).getText();
+								String value=((JTextField)cs[cis[j*2]]).getText();
+								ToolBar.this.frame.controller.setProperty(key,value);
+								((JTextField)cs[cis[j*2]]).setText(ToolBar.this.frame.controller.getProperty(key));
+							}
+							try{
+								ToolBar.this.frame.controller.saveProperty(Controller.propertyFileName);
+								ToolBar.this.frame.debug("配置文件保存成功");
+							}catch(IOException ee){
+								ee.printStackTrace();
+								ToolBar.this.frame.debug("配置文件保存失败");
+								return;
+							}
+							try{
+								ToolBar.this.frame.controller.connect();
+								ToolBar.this.frame.debug("连接成功");
+								statu=Statu.connected;
+							}catch(MessagingException ee){
+								ee.printStackTrace();
+								ToolBar.this.frame.debug("连接失败");
+								return;
+							}
 						}
 						ToolBar.this.frame.refreshDeep();
 					}
 				});//*/
 				i++;y++;
 			}
+			if(statu==Statu.connected){
+				//邮件内容
+				int J=j+1;
+				//---------------------------
+				cs[i]=new JLabel("收件人");
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				i++;y++;
+				cs[i]=new JTextField(20);
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				cis[++j]=i;
+				i++;y++;
+				//---------------------------
+				cs[i]=new JLabel("抄送");
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				i++;y++;
+				cs[i]=new JTextField(20);
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				cis[++j]=i;
+				i++;y++;
+				//---------------------------
+				cs[i]=new JLabel("主题");
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				i++;y++;
+				cs[i]=new JTextField(20);
+				panels[i]=Helper.createComponent(this,cs[i],w,y,w = 6,1,false);
+				cis[++j]=i;
+				i++;y++;
+				//---------------------------
+				cs[i]=new JLabel("正文");
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				i++;y++;
+				cs[i]=new JTextArea(10,20);
+				panels[i]=Helper.createComponent(this,cs[i],w,y,w = 6,1,false);
+				cis[++j]=i;
+				i++;y++;
+				//---------------------------
+				cs[i]=new JLabel("附件");
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				i++;y++;
+				cs[i]=new JTextArea(5,20);
+				panels[i]=Helper.createComponent(this,cs[i],w,y,w = 6,1,false);
+				cis[++j]=i;
+				i++;y++;
+				//---------------------------
+				cs[i]=new JLabel(">> >> 发送 >> >>");
+				panels[i]=Helper.createComponent(this,cs[i],lef,y,w = 6,1,false);
+				panels[i].addMouseListener(new Listener(){
+					public void mouseReleased(MouseEvent e){
+						Controller con=ToolBar.this.frame.controller;
+						int J=con.getPropertyKeys().size()*2;
+						Mail mail=con.createMail();
+						//make the mail
+						String receiver=((JTextField)cs[cis[J+1]]).getText();
+						String[] tmp=receiver.split(";");
+						try {
+							for(String t:tmp) mail.insertReceiver(RecipientType.TO,t);
+							ToolBar.this.frame.debug("插入收件人成功");
+						} catch (MessagingException ee) {
+							ee.printStackTrace();
+							ToolBar.this.frame.debug("插入收件人失败");
+							return;
+						}
+						//send the mail
+						try {
+							con.sendMail(mail);
+							ToolBar.this.frame.debug("发送成功");
+						} catch (MessagingException ee) {
+							ee.printStackTrace();
+							ToolBar.this.frame.debug("发送失败");
+							return;
+						}
+					}
+				});
+				i++;y++;
+			}
+			
 		}
 		//============================================================================
 		//empty

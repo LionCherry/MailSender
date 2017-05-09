@@ -1,6 +1,7 @@
 package control;
 
 import java.io.*;
+import java.util.List;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -12,7 +13,8 @@ import model.MyMail;
 public class MyController implements Controller{
 	private model.MyProperties mprop;
 	
-	public MyController(){
+	public MyController(model.MyProperties mprop){
+		this.mprop=mprop;
 	}
 	
 	@Override
@@ -23,6 +25,11 @@ public class MyController implements Controller{
 	@Override
 	public String getProperty(String x) {
 		return mprop.getProperty(x);
+	}
+	
+	@Override
+	public List<String> getPropertyKeys(){
+		return mprop.getPropertyKeys();
 	}
 
 	@Override
@@ -49,15 +56,16 @@ public class MyController implements Controller{
 	private Transport transport;
 
 	@Override
-	public void init(){
+	public void connect() throws MessagingException {
 		session=Session.getDefaultInstance(mprop.getPropertiesForSession());
 		session.setDebug(true);
-	}
-	
-	@Override
-	public void connect() throws MessagingException {
 		transport=session.getTransport();
 		transport.connect(mprop.getProperty("UserName"),mprop.getProperty("UserPassword"));
+	}
+	@Override
+	public void close() throws MessagingException {
+		if(transport!=null)
+			transport.close();
 	}
 	
 	@Override
@@ -68,7 +76,6 @@ public class MyController implements Controller{
 	@Override
 	public void sendMail(Mail mail) throws MessagingException {
 		transport.sendMessage(mail.getMail(), mail.getMail().getAllRecipients());
-		transport.close();
 	}
 
 }

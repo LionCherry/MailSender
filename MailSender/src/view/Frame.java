@@ -4,7 +4,6 @@ import java.awt.*;
 import javax.swing.*;
 
 import main.Debugger;
-import oper.Operation.Board;
 
 public final class Frame extends JFrame implements Refreshable{
 	private static final long serialVersionUID = 2703663016877310106L;
@@ -19,20 +18,23 @@ public final class Frame extends JFrame implements Refreshable{
 	@SuppressWarnings("unused")
 	private	Listener listener;
 	private final Debugger debugger;
-		public void debug(String msg){debugger.debug(msg);}
-		public void debug(String format,Object... args){debugger.debug(format,args);}
+		public void debug(String msg){debugger.debug(msg);this.refresh();}
+		public void debug(String format,Object... args){debugger.debug(format,args);this.refresh();}
 		protected void drawDebug(Graphics g){if(this.panel!=null)this.debugger.draw(this.panel,g);}
-	protected oper.Operation oper;
+	protected control.Controller controller;
 	
 	
-	public Frame(Debugger debugger,oper.Operation oper){
+	public Frame(Debugger debugger,control.Controller controller){
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		Dimension scrSize=Toolkit.getDefaultToolkit().getScreenSize();
 		Insets scrInsets=Toolkit.getDefaultToolkit().getScreenInsets(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration());
 		this.setBounds(scrInsets.left,scrInsets.top,scrSize.width*17/20,scrSize.height*9/10);
 		//Panel&&ToolBar
 		this.getContentPane().add(BorderLayout.CENTER,
-				(this.panel=new PanelWaitStart()).setFrame(this));
+				(this.panel=new Panel(){
+					private static final long serialVersionUID = 2448507397202059204L;
+					@Override protected void draw(Graphics g) { }
+				}).setFrame(this));
 		this.getContentPane().add(BorderLayout.WEST,
 				(this.toolbar=new ToolBar()).setFrame(this));
 		//listener
@@ -40,8 +42,7 @@ public final class Frame extends JFrame implements Refreshable{
 		//debugger
 		this.debugger=debugger;
 		//operation
-		this.oper=oper;
-		oper.setCallBack(this);
+		this.controller=controller;
 	}
 
 	@Override

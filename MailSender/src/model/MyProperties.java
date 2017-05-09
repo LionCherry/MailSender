@@ -3,6 +3,8 @@ package model;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public abstract class MyProperties implements Serializable{
@@ -14,8 +16,15 @@ public abstract class MyProperties implements Serializable{
 	public MyProperties(){
 		this.ini=new Properties();
 		this.prop=new Properties();
+		ini.setProperty("Username","");
+		ini.setProperty("Userpassword","");
 	}
-	
+	public final List<String> getPropertyKeys(){
+		List<String> res=new ArrayList<String>();
+		for(Object o:ini.keySet()) res.add((String)o);
+		for(Object o:prop.keySet()) res.add((String)o);
+		return res;
+	}
 	public final Properties getPropertiesForSession(){
 		return this.prop;
 	}
