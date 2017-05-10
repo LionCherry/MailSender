@@ -4,9 +4,10 @@ import java.io.UnsupportedEncodingException;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMessage.RecipientType;
+import javax.mail.Message.RecipientType;
 
 public interface Mail {
+	
 	
 	public MimeMessage getMail();
 
@@ -21,7 +22,7 @@ public interface Mail {
 	 * @throws MessagingException 
 	 * @throws UnsupportedEncodingException 
 	 */
-	public void insertReceiver(RecipientType type,String receiveMail) throws UnsupportedEncodingException, MessagingException;
+	public void insertReceiver(RecipientType to,String receiveMail) throws UnsupportedEncodingException, MessagingException;
 	
 	/**
 	 * ¼ÓÈëÎÄ×Ö

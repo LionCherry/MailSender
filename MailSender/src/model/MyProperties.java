@@ -31,15 +31,16 @@ public abstract class MyProperties implements Serializable{
 	public final String getProperty(String key){
 		if(ini.containsKey(key))
 			return ini.getProperty(key);
-		if(prop.contains(key))
+		if(prop.containsKey(key))
 			return prop.getProperty(key);
 		return "";
 	}
 	
 	public final void setProperty(String x,String y){
-		String[] ss=x.split(".");
+		String[] ss=x.split("\\.");
+		if(ss.length==0) ss=new String[]{x};
 		String name=ss[ss.length-1].toLowerCase();
-		name=String.valueOf(name.charAt(0)+'A'-'a')+name.substring(1);
+		name=""+(char)(name.charAt(0)+'A'-'a')+name.substring(1);
 		Class<?> clazz=this.getClass();
 		try {
 			Method m=clazz.getMethod("set"+name,String.class);

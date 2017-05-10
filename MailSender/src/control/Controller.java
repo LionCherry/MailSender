@@ -1,12 +1,14 @@
 package control;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import javax.mail.MessagingException;
 
 public interface Controller {
 
+	model.TextMacro getTextMacro();
 	/**
 	 * 设置参数配置
 	 */
@@ -48,8 +50,10 @@ public interface Controller {
 	
 	/**
 	 * 创建新邮件
+	 * @throws MessagingException 
+	 * @throws UnsupportedEncodingException 
 	 */
-	model.Mail createMail();
+	model.Mail createMail() throws UnsupportedEncodingException, MessagingException;
 	
 	/**
 	 * 发送邮件

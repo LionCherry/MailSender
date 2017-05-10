@@ -6,15 +6,27 @@ import java.util.List;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
 
 import model.Mail;
 import model.MyMail;
 
 public class MyController implements Controller{
 	private model.MyProperties mprop;
-	
-	public MyController(model.MyProperties mprop){
+
+	private model.TextMacro textMacro;
+	public MyController(model.MyProperties mprop,model.TextMacro textMacro){
 		this.mprop=mprop;
+		this.textMacro=textMacro;
+		if(mprop!=null)
+			try{
+				this.loadProperty(Controller.propertyFileName);
+			}catch(Throwable t){t.printStackTrace();}
+	}
+	
+	@Override
+	public model.TextMacro getTextMacro(){
+		return this.textMacro;
 	}
 	
 	@Override
@@ -60,7 +72,9 @@ public class MyController implements Controller{
 		session=Session.getDefaultInstance(mprop.getPropertiesForSession());
 		session.setDebug(true);
 		transport=session.getTransport();
-		transport.connect(mprop.getProperty("UserName"),mprop.getProperty("UserPassword"));
+		String username=mprop.getProperty("Username");
+		String password=mprop.getProperty("Userpassword");
+		transport.connect(username,password);
 	}
 	@Override
 	public void close() throws MessagingException {
@@ -69,8 +83,11 @@ public class MyController implements Controller{
 	}
 	
 	@Override
-	public Mail createMail(){
-		return new MyMail(this.session);
+	public Mail createMail() throws UnsupportedEncodingException, MessagingException{
+		Mail res=new MyMail(this.session);
+		String username=this.mprop.getProperty("Username");
+		res.getMail().setFrom(new InternetAddress(username,username,"UTF-8"));
+		return res;
 	}
 
 	@Override

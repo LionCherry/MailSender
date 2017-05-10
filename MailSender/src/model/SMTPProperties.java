@@ -17,12 +17,10 @@ public class SMTPProperties extends MyProperties{
 	public void setHost(String host){
 		prop.setProperty("mail.smtp.host",host);
 	}
-	public void setSsl(boolean ssl){
-		ini.setProperty("SSL",Boolean.toString(ssl));
+	public void setSsl(String ssl){
+		ini.setProperty("SSL",ssl);
 	}
-	public void setPort(int port){
-		prop.setProperty("mail.smtp.socketFactory.port",Integer.toString(port));
+	public void setPort(String port){
+		prop.setProperty("mail.smtp.socketFactory.port",port);
 	}
-	
-	
 }

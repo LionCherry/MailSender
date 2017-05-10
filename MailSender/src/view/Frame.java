@@ -25,24 +25,38 @@ public final class Frame extends JFrame implements Refreshable{
 	
 	
 	public Frame(Debugger debugger,control.Controller controller){
+		//operation
+		this.controller=controller;
+		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		Dimension scrSize=Toolkit.getDefaultToolkit().getScreenSize();
 		Insets scrInsets=Toolkit.getDefaultToolkit().getScreenInsets(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration());
-		this.setBounds(scrInsets.left,scrInsets.top,scrSize.width*17/20,scrSize.height*9/10);
+		this.setBounds(scrInsets.left,scrInsets.top,scrSize.width*10/20,scrSize.height*9/10);
 		//Panel&&ToolBar
 		this.getContentPane().add(BorderLayout.CENTER,
 				(this.panel=new Panel(){
 					private static final long serialVersionUID = 2448507397202059204L;
-					@Override protected void draw(Graphics g) { }
+					@Override protected void draw(Graphics g) {}
 				}).setFrame(this));
 		this.getContentPane().add(BorderLayout.WEST,
 				(this.toolbar=new ToolBar()).setFrame(this));
+		this.toolbar.setup();
 		//listener
 		(this.listener=new MyListener().addTo(this).addTo(this.panel).addTo(toolbar)).setFrame(this);
 		//debugger
 		this.debugger=debugger;
-		//operation
-		this.controller=controller;
+		new Thread(){
+			public void run(){
+				long dt=100;
+				while(true){
+					Frame.this.refresh(dt);
+					try {
+						Thread.sleep(dt);
+					} catch (InterruptedException e) {
+					}
+				}
+			}
+		}.start();
 	}
 
 	@Override
